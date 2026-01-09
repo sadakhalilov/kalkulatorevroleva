@@ -43,6 +43,9 @@ button.action-btn{padding:14px;border:none;border-radius:6px;font-size:15px;font
 .history-table th{background:var(--primary);color:#fff}
 .admin-toggle{position:fixed;bottom:10px;right:10px;opacity:.3;background:none;border:none;font-size:24px;cursor:pointer}
 #adminPanel{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);color:#fff;padding:20px;z-index:100;overflow-y:auto}
+.stats-card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid var(--accent); }
+.stats-card h4 { margin: 0 0 10px 0; color: var(--accent); text-transform: uppercase; font-size: 14px; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; }
 @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; } }
 #print-area { display: none; }
 </style>
@@ -99,14 +102,59 @@ button.action-btn{padding:14px;border:none;border-radius:6px;font-size:15px;font
 
 <button class="admin-toggle" onclick="toggleAdmin()">⚙️</button>
 <div id="adminPanel">
-    <h3>Настройки <button onclick="toggleAdmin()">✖</button></h3>
-    <input id="storeNameInput" type="text" placeholder="Име на обект">
-    <button onclick="saveStoreName()">Запази</button>
+    <h3>Администрация <button onclick="toggleAdmin()">✖</button></h3>
+    
+    <div class="stats-card">
+        <h4>Настройки на обекта</h4>
+        <input id="storeNameInput" type="text" placeholder="Име на обект" style="background:#fff; color:#000">
+        <button onclick="saveStoreName()" style="width:100%; padding:10px; background:var(--accent); border:none; font-weight:bold; cursor:pointer">Запази име</button>
+    </div>
+
+    <div class="stats-card">
+        <h4>Дневен оборот (Обобщение)</h4>
+        <div class="stats-grid">
+            <div>Общо EUR в касата:</div><div id="statTotalEUR" style="color:var(--ok)">0.00 €</div>
+            <div>Общо BGN в касата:</div><div id="statTotalBGN" style="color:var(--bgn)">0.00 лв</div>
+            <div>Брой продажби:</div><div id="statCount">0</div>
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <h4>Топ часове на продажба</h4>
+        <div id="statHours" style="font-size:13px">Все още няма данни...</div>
+    </div>
+
+    <div class="stats-card">
+        <h4>Дата на отчета</h4>
+        <div id="statDate" style="font-size:16px; font-weight:bold"></div>
+    </div>
 </div>
 
 <script>
 const RATE = 1.95583;
 let giveMode = 'EUR';
+let salesData = [];
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    if (type === 'success') {
+        osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    } else {
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    }
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') saveOrder();
+});
 
 function updateBgnHint() {
     const eur = parseFloat(document.getElementById('totalEUR').value) || 0;
@@ -147,16 +195,13 @@ function calculate() {
     const paidBGN = parseFloat(document.getElementById('givenBGN').value) || 0;
     const totalPaidInEUR = paidEUR + (paidBGN / RATE);
     const restEUR = totalPaidInEUR - totalEUR;
-    
     const resEl = document.getElementById('restTotal');
     const detEl = document.getElementById('restDetail');
-    
-    if(restEUR < 0) {
+    if(restEUR < -0.001) {
         resEl.innerText = "НЕДОСТИГ";
         detEl.innerText = (restEUR * RATE).toFixed(2) + " лв";
-        return;
+        return false;
     }
-
     if(giveMode === 'EUR') {
         resEl.innerText = restEUR.toFixed(2) + " €";
         detEl.innerText = "(" + (restEUR * RATE).toFixed(2) + " лв)";
@@ -169,11 +214,71 @@ function calculate() {
         resEl.innerText = wholeEUR + " €";
         detEl.innerText = "+ " + (centsEUR * RATE).toFixed(2) + " лв";
     }
+    return true;
+}
+
+function updateAdminStats() {
+    let totalEUR = 0;
+    let totalBGN = 0;
+    let hourCounts = {};
+
+    salesData.forEach(sale => {
+        totalEUR += sale.paidEUR;
+        totalBGN += sale.paidBGN;
+        const hour = sale.time.split(':')[0] + ":00";
+        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+    });
+
+    document.getElementById('statTotalEUR').innerText = totalEUR.toFixed(2) + " €";
+    document.getElementById('statTotalBGN').innerText = totalBGN.toFixed(2) + " лв";
+    document.getElementById('statCount').innerText = salesData.length;
+    document.getElementById('statDate').innerText = new Date().toLocaleDateString('bg-BG');
+
+    const sortedHours = Object.entries(hourCounts).sort((a,b) => b[1] - a[1]);
+    document.getElementById('statHours').innerHTML = sortedHours.length > 0 
+        ? sortedHours.map(([h, c]) => `<div>${h} ч. — ${c} продажби</div>`).join('')
+        : "Няма данни...";
 }
 
 function saveOrder() {
-    const row = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${document.getElementById('totalEUR').value}</td><td>${document.getElementById('givenEUR').value}</td><td>${document.getElementById('givenBGN').value}</td><td>${document.getElementById('restTotal').innerText}</td></tr>`;
+    const totalVal = parseFloat(document.getElementById('totalEUR').value);
+    if(!totalVal || totalVal <= 0) return;
+
+    const paidEUR = parseFloat(document.getElementById('givenEUR').value) || 0;
+    const paidBGN = parseFloat(document.getElementById('givenBGN').value) || 0;
+    const totalPaidInEUR = paidEUR + (paidBGN / RATE);
+
+    if (totalPaidInEUR < totalVal - 0.001) {
+        playSound('error'); alert("Грешка: Сумата не е събрана!"); return;
+    }
+
+    const now = new Date();
+    const sale = {
+        time: now.toLocaleTimeString(),
+        total: totalVal,
+        paidEUR: paidEUR,
+        paidBGN: paidBGN,
+        rest: document.getElementById('restTotal').innerText
+    };
+    
+    salesData.push(sale);
+    playSound('success');
+
+    const row = `<tr><td>${sale.time}</td><td>${sale.total.toFixed(2)}</td><td>${sale.paidEUR.toFixed(2)}</td><td>${sale.paidBGN.toFixed(2)}</td><td>${sale.rest}</td></tr>`;
     document.getElementById('histBody').insertAdjacentHTML('afterbegin', row);
+    
+    updateAdminStats();
+    resetForm();
+}
+
+function resetForm() {
+    document.getElementById('totalEUR').value = '';
+    document.getElementById('givenEUR').value = '';
+    document.getElementById('givenBGN').value = '';
+    document.getElementById('bgnHint').innerText = 'Равностойност: 0.00 лв';
+    document.getElementById('restTotal').innerText = '0.00 €';
+    document.getElementById('restDetail').innerText = '(0.00 лв)';
+    document.getElementById('totalEUR').focus();
 }
 
 function printOrder() {
@@ -185,6 +290,7 @@ function printOrder() {
 function toggleAdmin() {
     const p = document.getElementById('adminPanel');
     p.style.display = p.style.display === 'block' ? 'none' : 'block';
+    updateAdminStats();
 }
 
 function saveStoreName() {
