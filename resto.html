@@ -14,59 +14,36 @@
 *{box-sizing:border-box;}
 body{margin:0;font-family:Arial, sans-serif;background:var(--bg);display:flex;justify-content:center;padding:8px}
 .container{background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);width:100%;max-width:480px;padding:16px}
-
-/* ЛОГО СТИЛ В СТРАНИЦАТА */
-.logo-circle {
-  width: 60px; height: 60px; background: var(--primary); color: var(--accent);
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 40px; font-weight: bold; margin: 0 auto 10px; border: 2px solid var(--accent);
-}
-
+.logo-circle { width: 60px; height: 60px; background: var(--primary); color: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; margin: 0 auto 10px; border: 2px solid var(--accent); }
 h2{margin:0 0 15px;text-align:center;color:var(--primary);font-size:24px; font-weight: 800; border-bottom: 2px solid var(--accent); padding-bottom: 5px;}
 label{font-weight:600;font-size:12px;display:block;margin-bottom:4px}
 input[type=number],input[type=text]{width:100%;font-size:var(--font-size);padding:12px;border:2px solid #ccc;border-radius:6px;text-align:right;margin-bottom:10px;}
 .eur-input{border-color:var(--eur);background:#f0fff4}
 .bgn-input{border-color:var(--bgn);background:#f0f8ff}
-
+.bgn-hint { font-size: 14px; font-weight: bold; color: var(--bgn); margin-top: -8px; margin-bottom: 10px; text-align: right; }
 #banknoteArea{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
 .money-btn{width:100%;padding:14px;border:none;border-radius:6px;font-weight:bold;font-size:1.1rem;cursor:pointer;transition:0.2s}
 .eur-5{background:#b0bec5;} .eur-10{background:#ff8a80;} .eur-20{background:#90caf9;} 
 .eur-50{background:#ffcc80;} .eur-100{background:#a5d6a7;} .eur-200{background:#e0e0e0;}
 .bgn-5{background:#4fc3f7;} .bgn-10{background:#7986cb;} .bgn-20{background:#3f51b5;color:#fff;}
 .bgn-50{background:#ffb74d;} .bgn-100{background:#e57373;}
-
 .toggle-line{display:flex;justify-content:center;gap:8px;margin-bottom:8px}
 .toggle-line button{flex:1;padding:10px;border:2px solid;border-radius:6px;background:#fff;font-weight:600;cursor:pointer}
 .toggle-line button.active{background:var(--primary);color:#fff}
-
 .result-zone{background:var(--primary);color:#fff;padding:16px;border-radius:8px;text-align:center;margin:12px 0}
 .result-value{font-size:38px;font-weight:bold;color:var(--accent)}
-
 .change-toggle{display:flex;justify-content:center;gap:8px;margin:8px 0}
 .change-toggle button{flex:1;padding:10px;border:1px solid #fff;border-radius:6px;background:transparent;color:#fff;font-weight:600;cursor:pointer;font-size:12px}
 .change-toggle button.active{background:#fff;color:var(--primary)}
-
 .button-group{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 button.action-btn{padding:14px;border:none;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer;color:#fff;}
 .btn-save{background:var(--ok)} .btn-print{background:var(--primary)}
-
 .history-table{width:100%;font-size:11px;border-collapse:collapse;margin-top:10px}
 .history-table th,.history-table td{border:1px solid #ddd;padding:6px;text-align:center}
 .history-table th{background:var(--primary);color:#fff}
-
 .admin-toggle{position:fixed;bottom:10px;right:10px;opacity:.3;background:none;border:none;font-size:24px;cursor:pointer}
 #adminPanel{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);color:#fff;padding:20px;z-index:100;overflow-y:auto}
-.admin-box{background:#222;padding:15px;border-radius:8px;margin-bottom:15px;border:1px solid #444}
-.admin-item{display:flex;justify-content:space-between;padding:5px 0}
-
-@media print {
-    body * { visibility: hidden; }
-    #print-area, #print-area * { visibility: visible; }
-    #print-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; font-family: monospace; color: #000; }
-    .print-logo { font-size: 30px; text-align: center; font-weight: bold; margin-bottom: 5px; }
-    .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .print-table th, .print-table td { border-bottom: 1px dashed #000; padding: 5px; text-align: left; font-size: 12px; }
-}
+@media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; } }
 #print-area { display: none; }
 </style>
 </head>
@@ -84,13 +61,14 @@ button.action-btn{padding:14px;border:none;border-radius:6px;font-size:15px;font
   <div id="banknoteArea"></div>
 
   <label style="color:var(--eur)">Сума за плащане (EUR)</label>
-  <input id="totalEUR" type="number" step="0.01" placeholder="0.00" class="eur-input">
+  <input id="totalEUR" type="number" step="0.01" placeholder="0.00" class="eur-input" oninput="updateBgnHint()">
+  <div id="bgnHint" class="bgn-hint">Равностойност: 0.00 лв</div>
 
   <label style="color:var(--bgn)">Платено в лева</label>
-  <input id="givenBGN" type="number" step="0.01" placeholder="0.00" class="bgn-input">
+  <input id="givenBGN" type="number" step="0.01" placeholder="0.00" class="bgn-input" oninput="calculate()">
 
   <label style="color:var(--eur)">Платено в евро</label>
-  <input id="givenEUR" type="number" step="0.01" placeholder="0.00" class="eur-input">
+  <input id="givenEUR" type="number" step="0.01" placeholder="0.00" class="eur-input" oninput="calculate()">
 
   <div class="result-zone">
     <div style="font-size:12px">РЕСТО</div>
@@ -115,162 +93,106 @@ button.action-btn{padding:14px;border:none;border-radius:6px;font-size:15px;font
 </div>
 
 <div id="print-area">
-    <div style="border-top:1px dashed #000; margin: 10px 0;"></div>
-    <table class="print-table">
-        <thead><tr><th>Час</th><th>Сума €</th><th>Палено €</th><th>Платено лева</th><th>Ресто</th></tr></thead>
-        <tbody><tr><td id="ptTime"></td><td id="ptSum"></td><td id="ptPE"></td><td id="ptPL"></td><td id="ptRes"></td></tr></tbody>
-    </table>
-    <div style="border-top:1px dashed #000; margin: 10px 0;"></div>
-    <div style="text-align:center;">Благодарим Ви!</div>
+    <h3 id="printStoreTitle" style="text-align:center"></h3>
+    <p id="printData" style="text-align:center; font-family:monospace"></p>
 </div>
 
 <button class="admin-toggle" onclick="toggleAdmin()">⚙️</button>
-
 <div id="adminPanel">
-  <h3>Админ Настройки <button onclick="document.getElementById('adminPanel').style.display='none'" style="float:right; background:none; color:#fff; border:none; font-size:24px;">✖</button></h3>
-  
-  <div class="admin-box">
-    <label>Име на обекта:</label>
-    <div style="display:flex; gap:5px">
-        <input id="storeNameInput" type="text" style="text-align:left; background:#eee; font-size:16px">
-        <button onclick="saveStoreName()" style="background:var(--ok); color:#fff; border:none; border-radius:6px; padding:0 10px">Запази</button>
-    </div>
-  </div>
-
-  <div class="admin-box">
-    <div class="admin-item" style="border-bottom:1px solid #444; margin-bottom:10px"><strong>ОТЧЕТ ЗА ДНЕС</strong></div>
-    <div class="admin-item"><span>Оборот днес:</span><span style="color:var(--eur)" id="admTotalEUR">0.00 €</span></div>
-    <div class="admin-item"><span>Платено лева:</span><span style="color:var(--bgn)" id="admPaidBGN">0.00 лв</span></div>
-    <div class="admin-item"><span>Платено евро:</span><span style="color:var(--eur)" id="admPaidEUR">0.00 €</span></div>
-    <div class="admin-item" style="margin-top:10px; border-top:1px dashed #555; padding-top:10px">
-        <span>Общо в лв:</span><span style="color:var(--accent); font-size:18px" id="admLV">0.00 лв</span>
-    </div>
-  </div>
-
-  <button onclick="clearDay()" style="width:100%; padding:15px; background:var(--error); color:#fff; border:none; border-radius:6px; font-weight:bold">🗑 ИЗТРИЙ ДЕНЯ</button>
+    <h3>Настройки <button onclick="toggleAdmin()">✖</button></h3>
+    <input id="storeNameInput" type="text" placeholder="Име на обект">
+    <button onclick="saveStoreName()">Запази</button>
 </div>
 
 <script>
 const RATE = 1.95583;
 let giveMode = 'EUR';
-let daily = { totalEUR:0, paidBGN:0, paidEUR:0, ords:[] };
-let todayKey = 'day_' + new Date().toISOString().slice(0,10);
 
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function beep(freq=600, ms=150) {
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-    o.connect(g); g.connect(audioCtx.destination);
-    o.frequency.value = freq; g.gain.value = 1.0; 
-    o.start(); o.stop(audioCtx.currentTime + ms/1000);
+function updateBgnHint() {
+    const eur = parseFloat(document.getElementById('totalEUR').value) || 0;
+    document.getElementById('bgnHint').innerText = `Равностойност: ${(eur * RATE).toFixed(2)} лв`;
+    calculate();
 }
 
-function load() {
-    const s = localStorage.getItem(todayKey);
-    if(s) daily = JSON.parse(s);
-    const name = localStorage.getItem('storeName') || 'КАСА - 1';
-    document.getElementById('storeTitle').textContent = name;
-    document.getElementById('prStoreName').textContent = name;
-    document.getElementById('storeNameInput').value = name;
-    refl();
-}
-
-function saveStoreName() {
-    const v = document.getElementById('storeNameInput').value.trim() || 'КАСА - 1';
-    localStorage.setItem('storeName', v);
-    load(); beep(800, 100);
-}
-
-function showBanknotes(cur) {
-    document.getElementById('toggleEUR').classList.toggle('active', cur==='EUR');
-    document.getElementById('toggleBGN').classList.toggle('active', cur==='BGN');
+function showBanknotes(currency) {
     const area = document.getElementById('banknoteArea');
     area.innerHTML = '';
-    const notes = cur === 'EUR' ? [5,10,20,50,100,200] : [5,10,20,50,100];
-    notes.forEach(v => {
+    document.getElementById('toggleEUR').classList.toggle('active', currency==='EUR');
+    document.getElementById('toggleBGN').classList.toggle('active', currency==='BGN');
+    const notes = currency === 'EUR' ? [5, 10, 20, 50, 100, 200] : [5, 10, 20, 50, 100];
+    notes.forEach(n => {
         const btn = document.createElement('button');
-        btn.className = `money-btn ${cur.toLowerCase()}-${v}`;
-        btn.textContent = `${v} ${cur==='EUR'?'€':'лв'}`;
-        btn.onclick = () => {
-            const id = cur==='EUR' ? 'givenEUR' : 'givenBGN';
-            document.getElementById(id).value = ( (parseFloat(document.getElementById(id).value)||0) + v ).toFixed(2);
-            calc();
-        };
+        btn.className = `money-btn ${currency.toLowerCase()}-${n}`;
+        btn.innerText = n + (currency==='EUR' ? ' €' : ' лв');
+        btn.onclick = () => addMoney(n, currency);
         area.appendChild(btn);
     });
 }
 
-function calc() {
-    const t = parseFloat(document.getElementById('totalEUR').value) || 0;
-    const b = parseFloat(document.getElementById('givenBGN').value) || 0;
-    const e = parseFloat(document.getElementById('givenEUR').value) || 0;
-    const restE = (e + b/RATE) - t;
-    if (restE < 0) {
-        document.getElementById('restTotal').textContent = "---";
-        document.getElementById('restDetail').textContent = "Недостиг!";
-        return null;
-    }
-    let resTxt = '';
-    if(giveMode === 'EUR') resTxt = restE.toFixed(2) + " €";
-    else if(giveMode === 'BGN') resTxt = (restE * RATE).toFixed(2) + " лв";
-    else resTxt = restE.toFixed(2) + " € + " + (restE * RATE).toFixed(2) + " лв";
-
-    document.getElementById('restTotal').textContent = resTxt;
-    document.getElementById('restDetail').textContent = "(" + (restE * RATE).toFixed(2) + " лв)";
-    return { t, b, e, resTxt };
+function addMoney(val, cur) {
+    const input = document.getElementById(cur === 'EUR' ? 'givenEUR' : 'givenBGN');
+    input.value = (parseFloat(input.value || 0) + val).toFixed(2);
+    calculate();
 }
 
 function setGiveMode(m) {
     giveMode = m;
-    document.getElementById('btnGiveEUR').classList.toggle('active', m==='EUR');
-    document.getElementById('btnGiveBGN').classList.toggle('active', m==='BGN');
-    document.getElementById('btnGiveMix').classList.toggle('active', m==='MIX');
-    calc();
+    ['EUR','BGN','MIX'].forEach(x => document.getElementById('btnGive'+x).classList.toggle('active', m===x));
+    calculate();
 }
 
-function printOrder() {
-    const c = calc();
-    if(!c || c.t <= 0) return alert("Въведете сума!");
-    document.getElementById('ptTime').textContent = new Date().toLocaleTimeString('bg-BG');
-    document.getElementById('ptSum').textContent = c.t.toFixed(2);
-    document.getElementById('ptPE').textContent = c.e.toFixed(2);
-    document.getElementById('ptPL').textContent = c.b.toFixed(2);
-    document.getElementById('ptRes').textContent = c.resTxt;
-    window.print();
-    saveOrder();
+function calculate() {
+    const totalEUR = parseFloat(document.getElementById('totalEUR').value) || 0;
+    const paidEUR = parseFloat(document.getElementById('givenEUR').value) || 0;
+    const paidBGN = parseFloat(document.getElementById('givenBGN').value) || 0;
+    const totalPaidInEUR = paidEUR + (paidBGN / RATE);
+    const restEUR = totalPaidInEUR - totalEUR;
+    
+    const resEl = document.getElementById('restTotal');
+    const detEl = document.getElementById('restDetail');
+    
+    if(restEUR < 0) {
+        resEl.innerText = "НЕДОСТИГ";
+        detEl.innerText = (restEUR * RATE).toFixed(2) + " лв";
+        return;
+    }
+
+    if(giveMode === 'EUR') {
+        resEl.innerText = restEUR.toFixed(2) + " €";
+        detEl.innerText = "(" + (restEUR * RATE).toFixed(2) + " лв)";
+    } else if(giveMode === 'BGN') {
+        resEl.innerText = (restEUR * RATE).toFixed(2) + " лв";
+        detEl.innerText = "(" + restEUR.toFixed(2) + " €)";
+    } else {
+        const wholeEUR = Math.floor(restEUR.toFixed(2));
+        const centsEUR = restEUR - wholeEUR;
+        resEl.innerText = wholeEUR + " €";
+        detEl.innerText = "+ " + (centsEUR * RATE).toFixed(2) + " лв";
+    }
 }
 
 function saveOrder() {
-    const c = calc();
-    if(!c || c.t <= 0) return;
-    const now = new Date().toLocaleTimeString('bg-BG');
-    daily.totalEUR += c.t; daily.paidBGN += c.b; daily.paidEUR += c.e;
-    daily.ords.push({time:now, eur:c.t, pEur:c.e, bgn:c.b, rest:c.resTxt});
-    localStorage.setItem(todayKey, JSON.stringify(daily));
-    beep(900, 200);
-    document.getElementById('totalEUR').value = '';
-    document.getElementById('givenBGN').value = '';
-    document.getElementById('givenEUR').value = '';
-    refl(); calc();
+    const row = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${document.getElementById('totalEUR').value}</td><td>${document.getElementById('givenEUR').value}</td><td>${document.getElementById('givenBGN').value}</td><td>${document.getElementById('restTotal').innerText}</td></tr>`;
+    document.getElementById('histBody').insertAdjacentHTML('afterbegin', row);
 }
 
-function refl() {
-    document.getElementById('admTotalEUR').textContent = daily.totalEUR.toFixed(2) + " €";
-    document.getElementById('admPaidBGN').textContent = daily.paidBGN.toFixed(2) + " лв";
-    document.getElementById('admPaidEUR').textContent = daily.paidEUR.toFixed(2) + " €";
-    document.getElementById('admLV').textContent = (daily.totalEUR * RATE).toFixed(2) + " лв";
-    document.getElementById('histBody').innerHTML = daily.ords.slice(-5).reverse().map(o => 
-        `<tr><td>${o.time}</td><td>${o.eur.toFixed(2)}</td><td>${o.pEur.toFixed(2)}</td><td>${o.bgn.toFixed(2)}</td><td>${o.rest}</td></tr>`
-    ).join('');
+function printOrder() {
+    document.getElementById('printStoreTitle').innerText = document.getElementById('storeTitle').innerText;
+    document.getElementById('printData').innerText = `Час: ${new Date().toLocaleTimeString()}\nСума: ${document.getElementById('totalEUR').value} €\nПлатено: ${document.getElementById('givenEUR').value}€ / ${document.getElementById('givenBGN').value}лв\nРесто: ${document.getElementById('restTotal').innerText}`;
+    window.print();
 }
 
 function toggleAdmin() {
-    document.getElementById('adminPanel').style.display='block';
+    const p = document.getElementById('adminPanel');
+    p.style.display = p.style.display === 'block' ? 'none' : 'block';
 }
 
-function clearDay() { if(confirm("Изтриване?")) { daily={totalEUR:0,paidBGN:0,paidEUR:0,ords:[]}; localStorage.setItem(todayKey, JSON.stringify(daily)); refl(); } }
+function saveStoreName() {
+    document.getElementById('storeTitle').innerText = document.getElementById('storeNameInput').value;
+    toggleAdmin();
+}
 
-window.onload = () => { load(); showBanknotes('EUR'); };
-document.querySelectorAll('input').forEach(i => i.oninput = calc);
+showBanknotes('EUR');
 </script>
 </body>
 </html>
